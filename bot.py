@@ -113,9 +113,9 @@ async def back_to_main(message: types.Message, state: FSMContext):
 @dp.message(F.text == "🔑 Сменить пароль", F.from_user.id == ADMIN_ID)
 async def change_password_start(message: types.Message, state: FSMContext):
     await message.answer("Введите новый пароль:", reply_markup=ReplyKeyboardRemove())
-    await state.set_state(AdminStates.waiting_for_password)
+    await state.set_state(AdminStates.waiting_for_new_password)
 
-@dp.message(AdminStates.waiting_for_password, F.from_user.id == ADMIN_ID)
+@dp.message(AdminStates.waiting_for_new_password, F.from_user.id == ADMIN_ID)
 async def change_password_finish(message: types.Message, state: FSMContext):
     new_password = message.text
     current_config = load_config()
