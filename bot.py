@@ -146,9 +146,31 @@ async def upload_installer_finish(message: types.Message, state: FSMContext):
     await message.answer(f"✅ Установщик `{file_name}` успешно загружен и готов к раздаче!", reply_markup=get_admin_keyboard())
     await state.clear()
 
+async def web_server():
+    from aiohttp import web
+    async def handle(request):
+        return web.Response(text="Bot is running!")
+    
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    logger.info(f"Starting health check server on port {port}")
+    await site.start()
+
 async def main():
     logger.info("Starting bot...")
-    await dp.start_polling(bot)
+    # Run bot and web server concurrently
+    await asyncio.gather(
+        dp.start_polling(bot),
+        web_server()
+    )
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
