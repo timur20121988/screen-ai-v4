@@ -1,0 +1,11 @@
+.env
+__pycache__/
+logs/
+screenshots/
+build/
+dist/
+*.spec
+history.json
+ScreenAI.exe
+installer_output/
+config.json
