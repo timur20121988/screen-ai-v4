@@ -215,6 +215,7 @@ async def pay_with_crypto(message: types.Message, state: FSMContext):
         await message.answer("❌ Оплата через Crypto временно недоступна (не настроен токен).")
         return
     
+    current_config = load_config()
     amount = current_config.get("price_crypto_usd", 5)
     
     async with aiohttp.ClientSession() as session:
@@ -255,6 +256,7 @@ async def pay_with_crypto(message: types.Message, state: FSMContext):
 async def check_crypto_payment(message: types.Message, state: FSMContext):
     invoice_id = message.text.split(":")[1]
     token = os.getenv("CRYPTOPAY_TOKEN")
+    current_config = load_config()
     
     async with aiohttp.ClientSession() as session:
         url = "https://pay.crypt.bot/api/getInvoices"
