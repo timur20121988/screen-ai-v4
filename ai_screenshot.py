@@ -12,6 +12,7 @@ from tkinter import messagebox, simpledialog
 from pathlib import Path
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageTk
+import subprocess
 
 # Lazy imports placeholder
 mss = None
@@ -54,6 +55,18 @@ MODELS = {
 MAX_IMAGE_SIZE = (1600, 900)
 JPEG_QUALITY = 85
 HISTORY_FILE = APP_DATA / "history.json"
+SERVER_URL = "http://localhost:8080" # Сюда нужно вписать URL твоего бота (напр. https://your-bot.onrender.com)
+
+def get_hwid():
+    """Получает уникальный ID железа (UUID материнской платы)."""
+    try:
+        cmd = 'wmic csproduct get uuid'
+        uuid = subprocess.check_output(cmd, shell=True).decode().split('\n')[1].strip()
+        return uuid
+    except:
+        # Фолбэк на случай ошибки
+        import socket
+        return socket.gethostname()
 
 SYSTEM_PROMPT = (
     "Тебе дан скриншот с вопросом (тестом или задачей). "
@@ -330,6 +343,31 @@ class ScreenAIApp:
                     payload["max_tokens"] = 150
                 
                 req = get_requests()
+                
+                # Check Trial / Payment status
+                try:
+                    hwid = get_hwid()
+                    check_r = req.get(f"{SERVER_URL}/verify", params={"hwid": hwid}, timeout=10)
+                    if check_r.status_code == 200:
+                        status = check_r.json()
+                        if not status.get("allowed"):
+                            reason = status.get("reason", "Limit reached")
+                            if "Limit reached" in reason:
+                                self._notify("Trial Expired", "❌ Пробный период закончился (20/20).\nДля продолжения купите полную версию в боте.")
+                            else:
+                                self._notify("Ошибка", f"Доступ запрещен: {reason}")
+                            return
+                        else:
+                            remaining = status.get("remaining", "?")
+                            logger.info(f"Verification successful. Remaining requests: {remaining}")
+                    else:
+                        logger.warning(f"Verification server error: {check_r.status_code}")
+                except Exception as ve:
+                    logger.error(f"Verification failed: {ve}")
+                    # If server is down, we might want to allow or block. 
+                    # For security, let's block if it's a trial build, or allow if it's the main build.
+                    # Since we want to prevent "dupe", we should ideally block or at least log.
+                
                 r = req.post(OPENAI_API_URL, headers={"Authorization": f"Bearer {OPENAI_API_KEY}"}, json=payload, timeout=30)
                 
                 if r.status_code != 200:
