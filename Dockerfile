@@ -12,5 +12,8 @@ COPY . .
 # Ensure the installer output directory exists (though it should be in git)
 RUN mkdir -p installer_output
 
+# Expose port for health checks and API
+EXPOSE 8080
+
 # Run the bot
 CMD ["python", "bot.py"]

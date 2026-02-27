@@ -46,19 +46,29 @@ class UserStates(StatesGroup):
 
 # Config Management
 def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    return {
-        "password": DEFAULT_PASSWORD, 
+    defaults = {
+        "password": os.getenv("DEFAULT_PASSWORD", DEFAULT_PASSWORD), 
         "installer_path": None,
-        "price_stars": 50,
-        "price_crypto_usd": 5,
-        "cryptopay_token": "",
+        "price_stars": int(os.getenv("PRICE_STARS", 50)),
+        "price_crypto_usd": int(os.getenv("PRICE_CRYPTO_USD", 5)),
         "paid_users": [],
         "trial_installer_path": None,
         "trial_usage": {}
     }
+    
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                config = json.load(f)
+                # Merge with defaults to ensure all keys exist
+                for key, val in defaults.items():
+                    if key not in config:
+                        config[key] = val
+                return config
+        except Exception as e:
+            logger.error(f"Error loading config: {e}")
+            
+    return defaults
 
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:
