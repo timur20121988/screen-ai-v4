@@ -16,9 +16,9 @@ load_dotenv()
 
 # Configuration
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 CONFIG_FILE = "config.json"
-DEFAULT_PASSWORD = "88101217"
+DEFAULT_PASSWORD = os.getenv("DEFAULT_PASSWORD", "88101217")
 INSTALLER_DIR = "installer_output"
 
 if not os.path.exists(INSTALLER_DIR):
@@ -224,7 +224,6 @@ async def pay_with_crypto(message: types.Message, state: FSMContext):
     if not token:
         await message.answer("❌ Оплата через Crypto временно недоступна (не настроен токен).")
         return
-    
     current_config = load_config()
     amount = current_config.get("price_crypto_usd", 5)
     
@@ -279,7 +278,7 @@ async def check_crypto_payment(message: types.Message, state: FSMContext):
                     invoice = result["result"]["items"][0]
                     if invoice["status"] == "paid":
                         user_id = message.from_user.id
-                        if "paid_users" not in current_config:
+                        if "paid_users" not in current_config or current_config["paid_users"] is None:
                             current_config["paid_users"] = []
                         
                         if user_id not in current_config["paid_users"]:
